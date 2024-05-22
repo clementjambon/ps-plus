@@ -353,7 +353,7 @@ void processInputEvents() {
         }
 
         // Pass camera commands to the camera
-        if (maxScroll != 0.0) {
+        if (maxScroll != 0.0 && !io.KeyAlt && !io.KeyCtrl) {
           bool scrollClipPlane = io.KeyShift;
 
           if (scrollClipPlane) {
