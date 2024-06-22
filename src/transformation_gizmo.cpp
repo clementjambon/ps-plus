@@ -72,6 +72,33 @@ void TransformationGizmo::prepare() {
     render::engine->setMaterial(*arrowProgram, material);
   }
 
+  { // Scale arrows
+    // clang-format off
+    scaleProgram = render::engine->requestShader("RAYCAST_SCALE",       
+      render::engine->addMaterialRules(material,
+        {
+          "VECTOR_PROPAGATE_COLOR", 
+          "TRANSFORMATION_GIZMO_VEC", 
+          "SHADE_COLOR", 
+        }
+      ),
+      render::ShaderReplacementDefaults::Process);
+    // clang-format on
+
+    std::vector<glm::vec3> vectors;
+    std::vector<glm::vec3> bases;
+    std::vector<glm::vec3> colors;
+    std::vector<glm::vec3> components;
+    std::tie(vectors, bases, colors, components) = tripleArrowCoords();
+
+    scaleProgram->setAttribute("a_vector", vectors);
+    scaleProgram->setAttribute("a_position", bases);
+    scaleProgram->setAttribute("a_color", colors);
+    scaleProgram->setAttribute("a_component", components);
+
+    render::engine->setMaterial(*scaleProgram, material);
+  }
+
   { // Scale sphere
     // clang-format off
     sphereProgram = render::engine->requestShader("RAYCAST_SPHERE", 
@@ -105,17 +132,20 @@ void TransformationGizmo::draw() {
       view::getCameraViewMatrix() * T * glm::scale(glm::vec3{gizmoSizePreTrans, gizmoSizePreTrans, gizmoSizePreTrans});
   ringProgram->setUniform("u_modelView", glm::value_ptr(viewMat));
   arrowProgram->setUniform("u_modelView", glm::value_ptr(viewMat));
+  scaleProgram->setUniform("u_modelView", glm::value_ptr(viewMat));
   sphereProgram->setUniform("u_modelView", glm::value_ptr(viewMat));
 
   glm::mat4 projMat = view::getCameraPerspectiveMatrix();
   ringProgram->setUniform("u_projMatrix", glm::value_ptr(projMat));
   arrowProgram->setUniform("u_projMatrix", glm::value_ptr(projMat));
+  scaleProgram->setUniform("u_projMatrix", glm::value_ptr(projMat));
   sphereProgram->setUniform("u_projMatrix", glm::value_ptr(projMat));
 
   ringProgram->setUniform("u_diskWidthRel", diskWidthObj);
 
 
   render::engine->setMaterialUniforms(*arrowProgram, material);
+  render::engine->setMaterialUniforms(*scaleProgram, material);
   render::engine->setMaterialUniforms(*sphereProgram, material);
 
   // set selections
@@ -126,11 +156,12 @@ void TransformationGizmo::draw() {
     selectRot[selectedDim] = 1.;
   }
   ringProgram->setUniform("u_active", selectRot);
-  if (selectedType == TransformHandle::Translation) {
+  if (selectedType == TransformHandle::Translation || selectedType == TransformHandle::Scale) {
     selectTrans[selectedDim] = 1.;
   }
   arrowProgram->setUniform("u_active", selectTrans);
-  if (selectedType == TransformHandle::Scale) {
+  scaleProgram->setUniform("u_active", selectTrans);
+  if (selectedType == TransformHandle::ScaleOld) {
     sphereColor = glm::vec3(0.95);
   }
 
@@ -140,6 +171,10 @@ void TransformationGizmo::draw() {
   arrowProgram->setUniform("u_viewport", render::engine->getCurrentViewport());
   arrowProgram->setUniform("u_lengthMult", vecLength);
   arrowProgram->setUniform("u_radius", 0.2 * gizmoSize);
+  scaleProgram->setUniform("u_invProjMatrix", glm::value_ptr(Pinv));
+  scaleProgram->setUniform("u_viewport", render::engine->getCurrentViewport());
+  scaleProgram->setUniform("u_lengthMult", vecLength);
+  scaleProgram->setUniform("u_radius", 0.2 * gizmoSize);
 
   sphereProgram->setUniform("u_invProjMatrix", glm::value_ptr(Pinv));
   sphereProgram->setUniform("u_viewport", render::engine->getCurrentViewport());
@@ -152,10 +187,19 @@ void TransformationGizmo::draw() {
   render::engine->setBackfaceCull(false);
 
   // == draw
-
-  ringProgram->draw();
-  arrowProgram->draw();
-  sphereProgram->draw();
+  if (transformMode & TransformMode::Scale) {
+    // ringProgram->draw();
+    scaleProgram->draw();
+  }
+  if (transformMode & TransformMode::Translation) {
+    arrowProgram->draw();
+  }
+  if (transformMode & TransformMode::Rotation) {
+    ringProgram->draw();
+  }
+  if (transformMode & TransformMode::ScaleOld) {
+    sphereProgram->draw();
+  }
 }
 
 
@@ -242,8 +286,7 @@ bool TransformationGizmo::interact() {
         dragPrevVec = nearestPoint; // store this dir for the next time around
       }
 
-    } else if (selectedType == TransformHandle::Scale) {
-
+    } else if (selectedType == TransformHandle::ScaleOld) {
       // Cast against the scale sphere
 
       float dist, tHit;
@@ -258,6 +301,30 @@ bool TransformationGizmo::interact() {
         float scaleRatio = newWorldRad / worldSphereRad;
 
         // Split, transform, and recombine
+        glm::vec4 trans(T[3]);
+        T[3] = glm::vec4{0., 0., 0., 1.};
+        T *= scaleRatio;
+        T[3] = trans;
+        markUpdated();
+        polyscope::requestRedraw();
+
+        dragPrevVec = nearestPoint; // store this dir for the next time around
+      }
+    } else if (selectedType == TransformHandle::Scale) {
+
+
+      glm::vec3 normal = axNormals[selectedDim];
+      float dist, tHit;
+      glm::vec3 nearestPoint;
+      std::tie(tHit, dist, nearestPoint) =
+          lineTest(raySource, ray, center, normal, std::numeric_limits<float>::infinity());
+
+      if (dist != std::numeric_limits<float>::infinity()) {
+        // if a collinear line (etc) causes an inf dist, just don't process
+
+        // Split, transform, and recombine
+        float newWorldRad = glm::length(nearestPoint - center);
+        float scaleRatio = newWorldRad / (vecLength * gizmoSize);
         glm::vec4 trans(T[3]);
         T[3] = glm::vec4{0., 0., 0., 1.};
         T *= scaleRatio;
@@ -325,7 +392,7 @@ bool TransformationGizmo::interact() {
         firstHit = tHit;
         hitDist = dist;
         hitDim = 0;
-        hitType = TransformHandle::Scale;
+        hitType = TransformHandle::ScaleOld;
         hitNearest = nearestPoint;
       }
     }
@@ -336,7 +403,7 @@ bool TransformationGizmo::interact() {
     selectedType = TransformHandle::None;
     selectedDim = -1;
 
-    if (hitType == TransformHandle::Rotation && hitDist < diskWidth) {
+    if (hitType == TransformHandle::Rotation && (transformMode & TransformMode::Rotation) && hitDist < diskWidth) {
       // rotation is hovered
 
       // set new selection
@@ -350,11 +417,14 @@ bool TransformationGizmo::interact() {
         glm::vec3 nearestDir = glm::normalize(hitNearest - center);
         dragPrevVec = nearestDir;
       }
-    } else if (hitType == TransformHandle::Translation && hitDist < diskWidth) {
+    } else if (hitType == TransformHandle::Translation &&
+               (transformMode & TransformMode::Translation || transformMode & TransformMode::Scale) &&
+               hitDist < diskWidth) {
       // translation is hovered
 
       // set new selection
-      selectedType = TransformHandle::Translation;
+      selectedType =
+          (transformMode & TransformMode::Translation) ? TransformHandle::Translation : TransformHandle::Scale;
       selectedDim = hitDim;
 
       // if the mouse is clicked, start a drag
@@ -363,11 +433,11 @@ bool TransformationGizmo::interact() {
 
         dragPrevVec = hitNearest;
       }
-    } else if (hitType == TransformHandle::Scale) {
+    } else if (hitType == TransformHandle::ScaleOld && (transformMode & TransformMode::ScaleOld)) {
       // scaling is hovered
 
       // set new selection
-      selectedType = TransformHandle::Scale;
+      selectedType = TransformHandle::ScaleOld;
       selectedDim = -1;
 
       // if the mouse is clicked, start a drag

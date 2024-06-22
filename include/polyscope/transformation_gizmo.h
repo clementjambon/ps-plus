@@ -11,6 +11,14 @@ namespace polyscope {
 
 // A visual widget with handles for translations/rotations
 
+enum TransformMode {
+  None = 0,
+  Translation = 1 << 0,
+  Rotation = 1 << 1,
+  Scale = 1 << 2,
+  ScaleOld = 1 << 3,
+};
+
 class TransformationGizmo : public Widget {
 
 public:
@@ -27,6 +35,9 @@ public:
   // the main transform encoded by the gizmo
   PersistentValue<bool> enabled;
 
+  // the activated transformation mode
+  int transformMode = TransformMode::Translation | TransformMode::Rotation;
+
   // the main transform encoded by the gizmo
   // note that this is a reference set on construction; the gizmo wraps a transform defined somewhere else
   glm::mat4& T;
@@ -39,8 +50,7 @@ public:
   bool interact() override;
 
 protected:
-  enum class TransformHandle { None, Rotation, Translation, Scale };
-
+  enum class TransformHandle { None, Rotation, Translation, Scale, ScaleOld };
 
   // parameters
   const float gizmoSizeRel = 0.08;
@@ -52,6 +62,8 @@ protected:
   // state
   int selectedDim = -1; // must be {0,1,2} if selectedType == Rotation/Translation
   TransformHandle selectedType = TransformHandle::None;
+
+
   bool currentlyDragging = false;
   glm::vec3 dragPrevVec{1., 0.,
                         0.}; // the normal vector from the previous frame of the drag OR previous translation center
@@ -66,6 +78,7 @@ protected:
   std::shared_ptr<render::ShaderProgram> ringProgram;
   std::shared_ptr<render::ShaderProgram> arrowProgram;
   std::shared_ptr<render::ShaderProgram> sphereProgram;
+  std::shared_ptr<render::ShaderProgram> scaleProgram;
 
   // Geometry helpers used to test hits
 

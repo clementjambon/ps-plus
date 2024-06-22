@@ -284,6 +284,102 @@ R"(
 )"
 };
 
+const ShaderStageSpecification FLEX_SCALE_FRAG_SHADER = {
+    
+    ShaderStageType::Fragment,
+    
+    // uniforms
+    {
+        {"u_projMatrix", RenderDataType::Matrix44Float},
+        {"u_invProjMatrix", RenderDataType::Matrix44Float},
+        {"u_viewport", RenderDataType::Vector4Float},
+        {"u_radius", RenderDataType::Float},
+    }, 
+
+    { }, // attributes
+    
+    // textures 
+    {
+    },
+ 
+    // source
+R"(
+        ${ GLSL_VERSION }$
+        uniform mat4 u_projMatrix; 
+        uniform mat4 u_invProjMatrix;
+        uniform vec4 u_viewport;
+        uniform float u_radius;
+        in vec3 tailView;
+        in vec3 tipView;
+        layout(location = 0) out vec4 outputF;
+
+        float LARGE_FLOAT();
+        vec3 fragmentViewPosition(vec4 viewport, vec2 depthRange, mat4 invProjMat, vec4 fragCoord);
+        bool rayCylinderIntersection(vec3 rayStart, vec3 rayDir, vec3 cylTail, vec3 cylTip, float cylRad, out float tHit, out vec3 pHit, out vec3 nHit);
+        bool rayConeIntersection(vec3 rayStart, vec3 rayDir, vec3 coneBase, vec3 coneTip, float coneRad, out float tHit, out vec3 pHit, out vec3 nHit);
+        float fragDepthFromView(mat4 projMat, vec2 depthRange, vec3 viewPoint);
+        
+        ${ FRAG_DECLARATIONS }$
+
+        void main()
+        {
+           // Build a ray corresponding to this fragment
+           vec2 depthRange = vec2(gl_DepthRange.near, gl_DepthRange.far);
+           vec3 viewRay = fragmentViewPosition(u_viewport, depthRange, u_invProjMatrix, gl_FragCoord);
+           
+           // geometric shape of hte vector
+           float tipLengthFrac = 0.2;
+           float tipWidthFrac = 0.6;
+           float adjRadius = min(u_radius, length(tipView - tailView)*tipLengthFrac); // clip vector aspect ratio by shrinking width of small vectors (length is always an accurate representation of data)
+
+           // Raycast to the base cylinder 
+           float tHit = LARGE_FLOAT();
+           vec3 pHit = vec3(777,777,777);
+           vec3 nHit =  vec3(777,777,777);
+           vec3 cylEnd = tailView + (1. - tipLengthFrac) * (tipView - tailView);
+           float cylRad = tipWidthFrac * adjRadius;
+           rayCylinderIntersection(vec3(0., 0., 0), viewRay, tailView, cylEnd, cylRad, tHit, pHit, nHit);
+           
+           // Raycast to the larger cylinder
+           float tHitLarge;
+           vec3 pHitLarge;
+           vec3 nHitLarge;
+           bool largeHit = rayCylinderIntersection(vec3(0., 0., 0), viewRay, cylEnd, tipView, adjRadius, tHitLarge, pHitLarge, nHitLarge);
+           if(tHitLarge < tHit) {
+             tHit = tHitLarge;
+             pHit = pHitLarge;
+             nHit = nHitLarge;
+           }
+        
+           if(tHit >= LARGE_FLOAT()) {
+             discard;
+           }
+           float depth = fragDepthFromView(u_projMatrix, depthRange, pHit);
+           
+           ${ GLOBAL_FRAGMENT_FILTER_PREP }$
+           ${ GLOBAL_FRAGMENT_FILTER }$
+
+           // Set depth (expensive!)
+           gl_FragDepth = depth;
+          
+           // Shading
+           ${ GENERATE_SHADE_VALUE }$
+           ${ GENERATE_SHADE_COLOR }$
+
+           // Lighting
+           vec3 shadeNormal = nHit;
+           ${ GENERATE_LIT_COLOR }$
+
+           // Set alpha
+           float alphaOut = 1.0;
+           ${ GENERATE_ALPHA }$
+
+           // Write output
+           litColor *= alphaOut; // premultiplied alpha
+           outputF = vec4(litColor, alphaOut);
+        }
+)"
+};
 
 // == Rules
 

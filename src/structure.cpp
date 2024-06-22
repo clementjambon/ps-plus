@@ -27,8 +27,7 @@ Structure* Structure::setEnabled(bool newEnabled) {
   if (newEnabled == isEnabled()) return this;
   enabled = newEnabled;
   // Always hide the transform gizmo when disabling
-  if (!newEnabled)
-    transformGizmo.enabled.set(newEnabled);
+  if (!newEnabled) transformGizmo.enabled.set(newEnabled);
   requestRedraw();
   return this;
 };
@@ -343,9 +342,10 @@ bool Structure::getIgnoreSlicePlane(std::string name) {
   return ignoreThisPlane;
 }
 
-// additional controls
 void Structure::enableTransformGizmo(bool enabled) { transformGizmo.enabled = enabled; }
 
 bool Structure::isEnabledTransformGizmo() { return transformGizmo.enabled.get(); }
+
+void Structure::setTransformModeGizmo(int mode) { transformGizmo.transformMode = mode; }
 
 } // namespace polyscope
