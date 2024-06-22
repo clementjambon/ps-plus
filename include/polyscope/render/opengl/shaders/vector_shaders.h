@@ -13,6 +13,7 @@ extern const ShaderStageSpecification FLEX_VECTOR_VERT_SHADER;
 extern const ShaderStageSpecification FLEX_TANGENT_VECTOR_VERT_SHADER;
 extern const ShaderStageSpecification FLEX_VECTOR_GEOM_SHADER;
 extern const ShaderStageSpecification FLEX_VECTOR_FRAG_SHADER;
+extern const ShaderStageSpecification FLEX_SCALE_FRAG_SHADER;
 
 // Rules specific to cylinders
 extern const ShaderReplacementRule VECTOR_PROPAGATE_COLOR;
