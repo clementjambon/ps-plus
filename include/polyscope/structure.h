@@ -113,6 +113,10 @@ public:
 
   Structure* setTransformGizmoEnabled(bool newVal);
   bool getTransformGizmoEnabled();
+  
+  // Additional control
+  void enableTransformGizmo(bool enabled = true);
+  bool isEnabledTransformGizmo();
 
 protected:
   // = State
