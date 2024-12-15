@@ -26,6 +26,9 @@ Structure::~Structure(){};
 Structure* Structure::setEnabled(bool newEnabled) {
   if (newEnabled == isEnabled()) return this;
   enabled = newEnabled;
+  // Always hide the transform gizmo when disabling
+  if (!newEnabled)
+    transformGizmo.enabled.set(newEnabled);
   requestRedraw();
   return this;
 };
