@@ -71,6 +71,17 @@ void GLEngineGLFW::initialize() {
 
   setWindowResizable(view::windowResizable);
 
+  // === Initialize drop callback
+  auto drop_callback = [](GLFWwindow* window, int count, const char** paths) {
+    std::string input = (count > 0) ? std::string(paths[0]) : "";
+    // Only call the callback if it has been set
+    if (view::dropCallback) {
+      view::dropCallback(input);
+    }
+  };
+
+  glfwSetDropCallback(mainWindow, drop_callback);
+
 // === Initialize openGL
 // Load openGL functions (using GLAD)
 #ifndef __APPLE__
