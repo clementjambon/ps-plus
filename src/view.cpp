@@ -41,6 +41,7 @@ glm::vec3& flightTargetViewT = state::globalContext.flightTargetViewT;
 glm::vec3& flightInitialViewT = state::globalContext.flightInitialViewT;
 float& flightTargetFov = state::globalContext.flightTargetFov;
 float& flightInitialFov = state::globalContext.flightInitialFov;
+std::function<void(std::string)> dropCallback = nullptr;
 
 
 // Default values

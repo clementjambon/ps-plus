@@ -3,6 +3,7 @@
 #pragma once
 
 #include <array>
+#include <functional>
 #include <string>
 #include <tuple>
 
@@ -49,6 +50,8 @@ extern double& moveScale;
 extern double& nearClipRatio;
 extern double& farClipRatio;
 extern std::array<float, 4>& bgColor;
+
+extern std::function<void(std::string)> dropCallback;
 
 // Current view camera parameters
 // TODO deprecate these one day, and just use a CameraParameters member instead. But this would break existing code, so
