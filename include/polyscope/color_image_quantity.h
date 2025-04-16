@@ -32,6 +32,8 @@ public:
   ColorImageQuantity* setIsPremultiplied(bool val);
   bool getIsPremultiplied();
 
+  // Call directly ImGui image
+  void imguiImage(float w, float h, ImVec2 uv0, ImVec2 uv1);
 
 protected:
   std::vector<glm::vec4> colorsData;
