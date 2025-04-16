@@ -115,6 +115,10 @@ void ColorImageQuantity::showInImGuiWindow() {
   ImGui::End();
 }
 
+void ColorImageQuantity::imguiImage(float w, float h, ImVec2 uv0, ImVec2 uv1) {
+  ImGui::Image(colors.getRenderTextureBuffer()->getNativeHandle(), ImVec2(w, h), uv0, uv1);
+}
+
 void ColorImageQuantity::showInBillboard(glm::vec3 center, glm::vec3 upVec, glm::vec3 rightVec) {
 
   if (!billboardProgram) {
