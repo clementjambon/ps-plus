@@ -77,6 +77,31 @@ void setSelection(PickResult newPick) {
   }
 }
 
+// Same for Hover
+void resetHover() {
+  state::globalContext.haveHoverVal = false;
+  state::globalContext.currHoverPickResult = PickResult();
+}
+
+bool haveHover() { return state::globalContext.haveHoverVal; }
+
+void resetHoverIfStructure(Structure* s) {
+  if (state::globalContext.haveHoverVal && state::globalContext.currHoverPickResult.structure == s) {
+    resetHover();
+  }
+}
+
+PickResult getHover() { return state::globalContext.currHoverPickResult; }
+
+void setHover(PickResult newPick) {
+  if (!newPick.isHit) {
+    resetHover();
+  } else {
+    state::globalContext.haveHoverVal = true;
+    state::globalContext.currHoverPickResult = newPick;
+  }
+}
+
 
 namespace pick {
 

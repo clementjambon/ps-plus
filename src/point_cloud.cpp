@@ -282,6 +282,21 @@ void PointCloud::buildPickUI(const PickResult& rawResult) {
   ImGui::Indent(-20.);
 }
 
+void PointCloud::callbackPickUI(const PickResult& rawResult) {
+  if (this->userPickCallback) {
+    PointCloudPickResult result = interpretPickResult(rawResult);
+    this->userPickCallback((int)result.index);
+  }
+}
+
+void PointCloud::callbackHoverUI(const PickResult& rawResult) {
+  if (this->userHoverCallback) {
+    PointCloudPickResult result = interpretPickResult(rawResult);
+    this->userHoverCallback((int)result.index);
+  }
+}
+
+
 void PointCloud::buildCustomUI() {
   ImGui::Text("# points: %lld", static_cast<long long int>(nPoints()));
   if (ImGui::ColorEdit3("Point color", &pointColor.get()[0], ImGuiColorEditFlags_NoInputs)) {

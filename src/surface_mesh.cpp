@@ -1157,6 +1157,21 @@ void SurfaceMesh::buildPickUI(const PickResult& rawResult) {
   };
 }
 
+void SurfaceMesh::callbackPickUI(const PickResult& rawResult) {
+  if (this->userPickCallback) {
+    SurfaceMeshPickResult result = interpretPickResult(rawResult);
+    this->userPickCallback((int)result.elementType, (int)result.index);
+  }
+}
+
+void SurfaceMesh::callbackHoverUI(const PickResult& rawResult) {
+  if (this->userHoverCallback) {
+    SurfaceMeshPickResult result = interpretPickResult(rawResult);
+    this->userHoverCallback((int)result.elementType, (int)result.index);
+  }
+}
+
+
 glm::vec2 SurfaceMesh::projectToScreenSpace(glm::vec3 coord) {
 
   glm::mat4 viewMat = getModelView();

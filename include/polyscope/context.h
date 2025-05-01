@@ -107,6 +107,10 @@ struct Context {
   uint64_t nextPickBufferInd = 1;
   std::unordered_map<Structure*, std::tuple<uint64_t, uint64_t>> structureRanges;
 
+  PickResult currHoverPickResult;
+  bool haveHoverVal = false;
+  // uint64_t nextPickBufferInd = 1;
+
   // ======================================================
   // === Internal globals from internal.h
   // ======================================================

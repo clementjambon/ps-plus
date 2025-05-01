@@ -82,6 +82,10 @@ public:
   virtual void buildCustomOptionsUI() override;
   virtual void buildPickUI(const PickResult&) override;
 
+  // Add additional callbacks
+  virtual void callbackPickUI(const PickResult&) override;
+  virtual void callbackHoverUI(const PickResult&) override;
+
   // Render the the structure on screen
   virtual void draw() override;
   virtual void drawDelayed() override;
@@ -312,6 +316,9 @@ public:
   SurfaceMesh* setSmoothShade(bool isSmooth);
   bool isSmoothShade();
 
+  void setUserPickCallback(std::function<void(int, int)> func) { userPickCallback = func; }
+  void setUserHoverCallback(std::function<void(int, int)> func) { userHoverCallback = func; }
+
 
 private:
   // == Mesh geometry buffers
@@ -445,6 +452,10 @@ private:
   SurfaceOneFormTangentVectorQuantity* addOneFormTangentVectorQuantityImpl(std::string name, const std::vector<float>& data, const std::vector<char>& orientations);
 
   // === Helper implementations
+
+    // Callback when the user clicks on the mesh
+    std::function<void(int, int)> userPickCallback = nullptr;
+    std::function<void(int, int)> userHoverCallback = nullptr;  
 
   // clang-format on
 };

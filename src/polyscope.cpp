@@ -419,6 +419,10 @@ void processInputEvents() {
         }
         dragDistSinceLastRelease = 0.0;
       }
+      // Hover picks
+      ImVec2 p = ImGui::GetMousePos();
+      PickResult pickResult = pickAtScreenCoords(glm::vec2{p.x, p.y});
+      setHover(pickResult);
     }
   }
 
@@ -775,6 +779,7 @@ void buildPickGui() {
 
     if (selection.structureHandle.isValid()) {
       selection.structureHandle.get().buildPickUI(selection);
+      selection.structureHandle.get().callbackPickUI(selection);
     } else {
       // this is a paranoid check, it _should_ never happen since we
       // clear the selection when a structure is deleted
@@ -783,6 +788,17 @@ void buildPickGui() {
 
     rightWindowsWidth = ImGui::GetWindowWidth();
     ImGui::End();
+  }
+  if (haveHover())  {
+    PickResult hover = getHover();
+    if (hover.structureHandle.isValid()) {
+      hover.structureHandle.get().callbackHoverUI(hover);
+    } else {
+      // this is a paranoid check, it _should_ never happen since we
+      // clear the selection when a structure is deleted
+      ImGui::TextUnformatted("ERROR: INVALID STRUCTURE");
+    }
+
   }
 }
 
@@ -1122,6 +1138,7 @@ void removeStructure(std::string type, std::string name, bool errorIfAbsent) {
     g.second->removeChildStructure(*s);
   }
   resetSelectionIfStructure(s);
+  resetHoverIfStructure(s);
   sMap.erase(s->name);
   updateStructureExtents();
   return;
@@ -1183,6 +1200,7 @@ void removeAllStructures() {
 
   requestRedraw();
   resetSelection();
+  resetHover();
 }
 
 

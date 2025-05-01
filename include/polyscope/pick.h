@@ -52,6 +52,14 @@ bool haveSelection();
 void resetSelectionIfStructure(Structure* s); // If something from this structure is selected, clear the selection
                                               // (useful if a structure is being deleted)
 
+// Same with Hover
+PickResult getHover();
+void setHover(PickResult newPick);
+void resetHover();
+bool haveHover();
+void resetHoverIfStructure(Structure* s); // If something from this structure is selected, clear the selection
+                                              // (useful if a structure is being deleted)
+
 namespace pick {
 
 // Old, deprecated picking API. Use the above functions instead.

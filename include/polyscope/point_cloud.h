@@ -56,6 +56,10 @@ public:
   virtual void buildCustomOptionsUI() override;
   virtual void buildPickUI(const PickResult& result) override;
 
+  // Add additional callbacks
+  virtual void callbackPickUI(const PickResult& result) override;
+  virtual void callbackHoverUI(const PickResult& result) override;
+
   // Standard structure overrides
   virtual void draw() override;
   virtual void drawDelayed() override;
@@ -155,6 +159,9 @@ public:
   std::string getShaderNameForRenderMode();
 
   // === ~DANGER~ experimental/unsupported functions
+    
+  void setUserPickCallback(std::function<void(int)> func) { userPickCallback = func; }
+  void setUserHoverCallback(std::function<void(int)> func) { userHoverCallback = func; }
 
 
 private:
@@ -199,6 +206,12 @@ private:
   // TODO make these PersistentValue<>?
   std::string transparencyQuantityName = "";               // empty string means none
   PointCloudScalarQuantity& resolveTransparencyQuantity(); // helper
+
+  // === Additional callbacks
+
+  // Callback when the user clicks on the mesh
+  std::function<void(int)> userPickCallback = nullptr;
+  std::function<void(int)> userHoverCallback = nullptr;
 };
 
 // Shorthand to add a point cloud to polyscope

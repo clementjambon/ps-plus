@@ -56,6 +56,10 @@ public:
   virtual void buildQuantitiesUI();       // build quantities, if they exist. Overridden by QuantityStructure.
   virtual void buildSharedStructureUI();  // Draw any UI elements shared between all instances of the structure
   virtual void buildPickUI(const PickResult& result) = 0; // Draw pick UI elements based on a selection result
+  
+  // == Additional (optional) callbacks for pick or hover
+  virtual void callbackPickUI(const PickResult& result){};
+  virtual void callbackHoverUI(const PickResult& result){};
 
   // = Identifying data
   const std::string name; // should be unique amongst registered structures with this type
